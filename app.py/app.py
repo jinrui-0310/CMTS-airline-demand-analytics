@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="US Airline Demand Analytics", page_icon="✈️", layout="wide", initial_sidebar_state="expanded")
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = PROJECT_ROOT / "data" / "processed" / "airline_analytics.duckdb"
+DASHBOARD_DIR = PROJECT_ROOT / "data" / "dashboard"
 TABLE_DIR = PROJECT_ROOT / "outputs" / "tables"
 FIGURE_DIR = PROJECT_ROOT / "outputs" / "figures"
 BLUE, ORANGE, DARK = "#2563EB", "#F59E0B", "#0F172A"
@@ -22,29 +22,43 @@ st.markdown("""<style>
 
 @st.cache_data(show_spinner=False)
 def run_query(query, params=()):
-    with duckdb.connect(str(DB_PATH), read_only=True) as conn:
+    with duckdb.connect(":memory:") as conn:
+        market_file = str(DASHBOARD_DIR / "market_overview.parquet").replace("'", "''")
+        routes_file = str(DASHBOARD_DIR / "airport_pairs.parquet").replace("'", "''")
+
+        conn.execute(
+            f"CREATE VIEW market_overview AS "
+            f"SELECT * FROM read_parquet('{market_file}')"
+        )
+        conn.execute(
+            f"CREATE VIEW airport_pairs AS "
+            f"SELECT * FROM read_parquet('{routes_file}')"
+        )
+
         return conn.execute(query, params).df()
 
 @st.cache_data(show_spinner=False)
 def load_market_overview():
     return run_query("""
-        SELECT Year, Quarter, SUM(passengers) AS total_passengers,
-               SUM(passengers * avg_fare) / NULLIF(SUM(CASE WHEN avg_fare IS NOT NULL THEN passengers ELSE 0 END), 0) AS weighted_avg_fare,
-               COUNT(*) AS route_records
-        FROM route_quarter GROUP BY Year, Quarter ORDER BY Year, Quarter
+        SELECT *
+        FROM market_overview
+        ORDER BY Year, Quarter
     """)
 
 @st.cache_data(show_spinner=False)
 def load_top_airport_pairs(start_year, end_year, limit=10):
-    # Airport-pair totals include every itinerary with these endpoints.
     return run_query("""
-        SELECT Origin, Dest,
-               SUM(passengers) AS passengers,
-               SUM(CASE WHEN avg_fare IS NOT NULL THEN passengers * avg_fare ELSE 0 END)
-                 / NULLIF(SUM(CASE WHEN avg_fare IS NOT NULL THEN passengers ELSE 0 END), 0) AS avg_fare,
-               COUNT(DISTINCT Year * 10 + Quarter) AS quarters
-        FROM route_quarter
-        WHERE Year BETWEEN ? AND ? AND Origin IS NOT NULL AND Dest IS NOT NULL
+        SELECT
+            Origin,
+            Dest,
+            SUM(passengers) AS passengers,
+            SUM(fare_weighted_sum)
+                / NULLIF(SUM(fare_weight), 0) AS avg_fare,
+            COUNT(*) AS quarters
+        FROM airport_pairs
+        WHERE Year BETWEEN ? AND ?
+          AND Origin IS NOT NULL
+          AND Dest IS NOT NULL
         GROUP BY Origin, Dest
         ORDER BY passengers DESC
         LIMIT ?
@@ -54,34 +68,71 @@ def load_top_airport_pairs(start_year, end_year, limit=10):
 @st.cache_data(show_spinner=False)
 def load_airports():
     return run_query("""
-        SELECT Origin AS airport FROM route_quarter WHERE Origin IS NOT NULL
-        UNION SELECT Dest AS airport FROM route_quarter WHERE Dest IS NOT NULL
+        SELECT Origin AS airport
+        FROM airport_pairs
+        WHERE Origin IS NOT NULL
+
+        UNION
+
+        SELECT Dest AS airport
+        FROM airport_pairs
+        WHERE Dest IS NOT NULL
+
         ORDER BY airport
     """)["airport"].tolist()
 
 @st.cache_data(show_spinner=False)
 def load_destinations(origin):
-    return run_query("SELECT DISTINCT Dest FROM route_quarter WHERE Origin = ? ORDER BY Dest", (origin,))["Dest"].tolist()
+    return run_query("""
+        SELECT DISTINCT Dest
+        FROM airport_pairs
+        WHERE Origin = ?
+        ORDER BY Dest
+    """, (origin,))["Dest"].tolist()
 
 @st.cache_data(show_spinner=False)
 def load_route_history(origin, destination):
     return run_query("""
-        SELECT Year, Quarter, SUM(passengers) AS passengers,
-               SUM(passengers * avg_fare) / NULLIF(SUM(CASE WHEN avg_fare IS NOT NULL THEN passengers ELSE 0 END), 0) AS avg_fare,
-               MIN(HHI_TK) AS hhi, MIN(n_carriers_TK) AS n_carriers,
-               MIN(nonstop_distance) AS nonstop_distance,
-               COUNT(DISTINCT CAST(OriginCityMarketID AS TEXT) || '-' || CAST(DestCityMarketID AS TEXT)) AS market_count
-        FROM route_quarter WHERE Origin = ? AND Dest = ?
-        GROUP BY Year, Quarter ORDER BY Year, Quarter
+        SELECT
+            Year,
+            Quarter,
+            passengers,
+            fare_weighted_sum / NULLIF(fare_weight, 0) AS avg_fare,
+            hhi,
+            n_carriers,
+            nonstop_distance,
+            market_count
+        FROM airport_pairs
+        WHERE Origin = ? AND Dest = ?
+        ORDER BY Year, Quarter
     """, (origin, destination))
 
 @st.cache_data(show_spinner=False)
 def load_predictions():
-    return pd.read_csv(TABLE_DIR / "random_forest_predictions.csv")
+    df = pd.read_parquet(TABLE_DIR / "random_forest_predictions.parquet")
+
+    for col in [
+        "Year",
+        "Quarter",
+        "OriginCityMarketID",
+        "DestCityMarketID",
+        "target_passengers",
+        "rf_predicted",
+        "naive_predicted",
+    ]:
+        df[col] = pd.to_numeric(df[col], errors="raise")
+
+    return df
+
 
 @st.cache_data(show_spinner=False)
 def load_route_mapping():
-    return pd.read_csv(TABLE_DIR / "route_mapping.csv")
+    df = pd.read_parquet(TABLE_DIR / "route_mapping.parquet")
+
+    for col in ["OriginCityMarketID", "DestCityMarketID"]:
+        df[col] = pd.to_numeric(df[col], errors="raise")
+
+    return df
 
 @st.cache_data(show_spinner=False)
 def load_results_csv(filename):
