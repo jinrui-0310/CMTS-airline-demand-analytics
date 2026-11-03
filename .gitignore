@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+.env/
+.env.*
+
+# macOS
+.DS_Store
+
+# Data files
+data/raw/*.csv
+data/processed/*.csv
+data/processed/*.parquet
+data/processed/*.duckdb
+data/processed/*.db
+*.duckdb.wal
+
+# Generated models
+models/*.joblib
+models/*.pkl
+
+# Generated outputs
+outputs/tables/*.csv
+outputs/tables/*.json
+outputs/figures/*.png
+outputs/figures/*.jpg
+
+# DuckDB temporary files
+*.tmp
+*.wal
+
+# Logs
+*.log
+.vscode/
+*.code-workspace
+
+# Generated SQL analysis results
+outputs/tables/sql_analysis/
