@@ -1,14 +1,20 @@
-# U.S. Airline Demand Analytics
+# U.S. Airline Market & Passenger Demand Analytics Platform
 
-A Python-based data engineering and machine learning platform for analyzing U.S. airline markets and forecasting quarterly passenger demand.
+An end-to-end data analytics and machine learning platform analyzing 15+ years of U.S. airline market data.
 
-The project integrates large-scale airline itinerary data, builds a reproducible analytical pipeline using Python, DuckDB, SQL, and Parquet, and evaluates machine learning models for route-level passenger demand forecasting.
+This project combines large-scale data engineering, exploratory data analysis, and machine learning to analyze historical airline market trends and forecast quarterly passenger demand. Built with Python, DuckDB, SQL, Parquet, and Streamlit, it includes time-aware forecasting, model evaluation, and an interactive dashboard for exploring market trends, individual routes, and prediction results.
 
-An interactive Streamlit dashboard provides access to historical market trends, route-level analysis, forecasting results, and model explainability.
+### Project at a Glance
 
-**Dataset coverage:** 2010 Q1–2025 Q2  
-**Dataset size:** 19,948,408 route-quarter observations  
-**Test period:** 2024 Q1–2025 Q2
+| Dataset | Forecasting | Model Evaluation |
+|:---:|:---:|:---:|
+| **19.95M Records** | **5 Forecasting Methods** | **992K Test Predictions** |
+| 2010 Q1–2025 Q2 | ML Models + Seasonal Baseline | 2024 Q1–2025 Q2 |
+
+### Live Demo
+🚀 [Launch Interactive Dashboard](https://cmts-airline-demand-analytics-ahf8rkhjsc4nqd63gytcvh.streamlit.app/)
+
+
 
 ## 1. Project Overview
 
@@ -392,10 +398,8 @@ The required processed data and model outputs must be generated before launching
 
 ### Step 1: Clone the Repository
 
-    git clone <repository-url>
-    cd CMTS-airline-demand-analytics
-
-Replace `<repository-url>` with the repository's Git URL.
+    git clone https://github.com/jinrui-0310/CMTS-airline-demand-analytics.git
+cd CMTS-airline-demand-analytics
 
 ### Step 2: Create a Python Environment
 
