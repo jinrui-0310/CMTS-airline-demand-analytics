@@ -1,5 +1,6 @@
 # Airline Demand Analytics
 
+<img width="1235" height="699" alt="Market Overview" src="https://github.com/user-attachments/assets/739db7eb-80bb-4da1-85d3-f54f87c87351" />
 A Python project for analyzing U.S. airline route-level demand and forecasting quarterly passenger volumes.
 
 The project uses DuckDB and SQL to process airline market data, builds time-aware features for forecasting, compares several machine learning models, and provides a Streamlit dashboard for exploring the results.
