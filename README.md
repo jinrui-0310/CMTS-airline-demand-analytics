@@ -11,8 +11,7 @@ This project combines large-scale data engineering, exploratory data analysis, a
 | **19.95M Records** | **5 Forecasting Methods** | **992K Test Predictions** |
 | 2010 Q1–2025 Q2 | ML Models + Seasonal Baseline | 2024 Q1–2025 Q2 |
 
-### Live Demo
-🚀 [Launch Interactive Dashboard](https://cmts-airline-demand-analytics-ahf8rkhjsc4nqd63gytcvh.streamlit.app/)
+### Live Demo  🚀 [Launch Interactive Dashboard](https://cmts-airline-demand-analytics-ahf8rkhjsc4nqd63gytcvh.streamlit.app/)
 
 
 
@@ -107,9 +106,17 @@ The complete workflow is orchestrated by `run_pipeline.py`.
     ├── requirements.txt
     └── README.md
 
-## 4. Dataset
+## 4. Dataset & Data Source
 
-The project uses U.S. airline itinerary data derived from the Bureau of Transportation Statistics (BTS) DB1B dataset, together with market concentration information.
+### Data Source
+
+This project uses the **Airline Origin and Destination Survey (DB1B)** published by the U.S. Department of Transportation's Bureau of Transportation Statistics (BTS).
+
+DB1B is a quarterly 10% sample of airline tickets reported by U.S. carriers. The primary data source is **DB1BMarket**, which provides information on passenger itineraries, airfares, carriers, and origin–destination markets.
+
+Both the route-quarter panel and market concentration measures are derived from DB1BMarket, ensuring consistent market and temporal definitions.
+
+**Official Source:** [BTS TranStats Database](https://www.transtats.bts.gov/)
 
 ### Data Coverage
 
@@ -125,6 +132,31 @@ Passenger volumes represent observations in the processed DB1B dataset rather th
 
 The dataset includes nonstop and connecting itineraries.
 
+### Data Aggregation
+
+Raw DB1BMarket records are processed into a quarterly route-level panel. Passenger demand, average airfare, and market concentration are calculated using consistent route-quarter definitions.
+
+#### Passenger-Weighted Average Fare
+
+The average airfare for each route-quarter is calculated by weighting fares by passenger counts:
+
+![Passenger-Weighted Average Fare](https://latex.codecogs.com/svg.image?\overline{\mathrm{Fare}}_{r,t}=\frac{\sum_i\mathrm{Fare}_i\cdot\mathrm{Passengers}_i}{\sum_i\mathrm{Passengers}_i})
+
+#### Herfindahl–Hirschman Index (HHI)
+
+Market concentration is measured using carrier passenger shares:
+
+![HHI Formula](https://latex.codecogs.com/svg.image?\mathrm{HHI}_{r,t}=\sum_c\left(\frac{\mathrm{Passengers}_{c,r,t}}{\sum_j\mathrm{Passengers}_{j,r,t}}\right)^2)
+
+Here, `r` represents an origin–destination route, `t` represents a quarter, and `c` represents an airline carrier.
+
+Higher HHI values indicate greater market concentration.
+
+### Data Availability
+
+Due to the large size of the original dataset, raw DB1BMarket files are not included in this repository.
+
+The original data is publicly available through the [BTS TranStats Database](https://www.transtats.bts.gov/).
 ## 5. Data Engineering Pipeline
 
 The pipeline consists of four stages.
