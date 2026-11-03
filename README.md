@@ -1,103 +1,149 @@
-# Airline Demand Analytics
+# U.S. Airline Demand Analytics
 
-<img width="1235" height="699" alt="Market Overview" src="https://github.com/user-attachments/assets/739db7eb-80bb-4da1-85d3-f54f87c87351" />
-A Python project for analyzing U.S. airline route-level demand and forecasting quarterly passenger volumes.
+A Python-based data engineering and machine learning platform for analyzing U.S. airline markets and forecasting quarterly passenger demand.
 
-The project uses DuckDB and SQL to process airline market data, builds time-aware features for forecasting, compares several machine learning models, and provides a Streamlit dashboard for exploring the results.
+The project integrates large-scale airline itinerary data, builds a reproducible analytical pipeline using Python, DuckDB, SQL, and Parquet, and evaluates machine learning models for route-level passenger demand forecasting.
 
-The dataset covers 2010 Q1 through 2025 Q2, with approximately 20 million route-quarter observations.
+An interactive Streamlit dashboard provides access to historical market trends, route-level analysis, forecasting results, and model explainability.
 
-## Project Structure
+**Dataset coverage:** 2010 Q1–2025 Q2  
+**Dataset size:** 19,948,408 route-quarter observations  
+**Test period:** 2024 Q1–2025 Q2
 
-```text
-CMTS-airline-demand-analytics/
-├── app.py/
-│   └── app.py
-├── src/
-│   ├── data_pipeline.py
-│   ├── build_duckdb.py
-│   ├── build_duckdb_features.py
-│   ├── validate_duckdb_features.py
-│   ├── build_route_mapping.py
-│   ├── export_kpis.py
-│   ├── visualize.py
-│   ├── run_sql_analysis.py
-│   ├── train_elasticnet.py
-│   ├── train_xgboost.py
-│   ├── train_residual_xgboost.py
-│   ├── train_random_forest.py
-│   ├── analyze_errors.py
-│   ├── walk_forward_validation.py
-│   ├── ablation_study.py
-│   ├── shap_analysis.py
-│   └── dashboard_data_audit.py
-├── sql/
-├── data/
-│   ├── raw/
-│   └── processed/
-├── models/
-├── outputs/
-├── run_pipeline.py
-├── requirements.txt
-└── README.md
-```
+## 1. Project Overview
 
-## Data Pipeline
+The project provides an end-to-end analytical workflow for:
 
-The pipeline consists of four stages:
+- Processing and integrating large-scale airline datasets.
+- Analyzing passenger demand, airfare, and market competition.
+- Engineering time-aware forecasting features.
+- Training and evaluating machine learning models.
+- Comparing machine learning predictions against a seasonal baseline.
+- Interpreting predictions using SHAP.
+- Presenting results through an interactive dashboard.
 
-| Stage | Description |
+The implementation emphasizes data engineering, computational analysis, machine learning workflows, and reproducibility.
+
+### Technology Stack
+
+| Component | Technologies |
 |---|---|
-| Data | Integrates raw datasets, builds the DuckDB database, generates features, and exports analytical tables |
-| SQL | Runs data validation and market analysis queries |
-| Models | Trains ElasticNet, XGBoost, Residual XGBoost, and Random Forest |
-| Analysis | Performs error analysis, walk-forward validation, ablation studies, SHAP analysis, and dashboard data auditing |
+| Programming | Python 3.11 |
+| Data Processing | Pandas, NumPy |
+| Analytical Database | DuckDB 2.0.0 |
+| Data Storage | CSV, Parquet |
+| Query Language | SQL |
+| Machine Learning | scikit-learn, XGBoost |
+| Explainability | SHAP |
+| Visualization | Matplotlib, Plotly |
+| Dashboard | Streamlit |
 
-The complete workflow is managed by `run_pipeline.py`.
+## 2. System Architecture
 
-```text
-Raw CSV Files
-      |
-      v
-Data Cleaning and Integration
-      |
-      v
-DuckDB + Parquet
-      |
-      v
-SQL Feature Engineering
-      |
-      v
-Forecasting Models
-      |
-      v
-Model Evaluation
-      |
-      v
-Streamlit Dashboard
-```
+    Raw Airline Datasets
+             |
+             v
+    Data Cleaning and Integration
+             |
+             v
+    Parquet Storage + DuckDB
+             |
+             v
+    SQL Analysis and Feature Engineering
+             |
+             v
+    Time-Aware Modeling Dataset
+             |
+             v
+    Machine Learning Training
+             |
+             v
+    Model Evaluation and Explainability
+             |
+             v
+    Streamlit Dashboard
 
-### Data Processing
+The complete workflow is orchestrated by `run_pipeline.py`.
 
-The project combines route-level airline observations with market concentration data.
+## 3. Project Structure
 
-The processed dataset contains:
+    CMTS-airline-demand-analytics/
+    ├── app.py/
+    │   └── app.py
+    ├── src/
+    │   ├── data_pipeline.py
+    │   ├── build_duckdb.py
+    │   ├── build_duckdb_features.py
+    │   ├── validate_duckdb_features.py
+    │   ├── build_route_mapping.py
+    │   ├── export_kpis.py
+    │   ├── visualize.py
+    │   ├── run_sql_analysis.py
+    │   ├── data_loader.py
+    │   ├── train_elasticnet.py
+    │   ├── train_xgboost.py
+    │   ├── train_residual_xgboost.py
+    │   ├── train_random_forest.py
+    │   ├── analyze_errors.py
+    │   ├── walk_forward_validation.py
+    │   ├── ablation_study.py
+    │   ├── shap_analysis.py
+    │   └── dashboard_data_audit.py
+    ├── sql/
+    ├── data/
+    │   ├── raw/
+    │   └── processed/
+    ├── models/
+    ├── outputs/
+    │   ├── tables/
+    │   └── figures/
+    ├── run_pipeline.py
+    ├── requirements.txt
+    └── README.md
+
+## 4. Dataset
+
+The project uses U.S. airline itinerary data derived from the Bureau of Transportation Statistics (BTS) DB1B dataset, together with market concentration information.
+
+### Data Coverage
 
 | Dataset | Observations |
 |---|---:|
 | Integrated route-quarter records | 19,948,408 |
 | Eligible modeling records | 8,815,216 |
-| Test predictions | 992,290 |
+| Test-set predictions | 992,290 |
 
-Feature validation checks duplicate route-quarter keys and the temporal alignment of lagged variables.
+The historical dataset covers 2010 Q1 through 2025 Q2.
 
-The latest validation run found no duplicate keys or invalid lag-1/lag-4 alignments.
+Passenger volumes represent observations in the processed DB1B dataset rather than a complete census of U.S. airline passengers.
+
+The dataset includes nonstop and connecting itineraries.
+
+## 5. Data Engineering Pipeline
+
+The pipeline consists of four stages.
+
+| Stage | Description |
+|---|---|
+| Data | Integrates raw datasets, builds DuckDB tables and views, generates features, and exports analytical tables |
+| SQL | Runs data validation and market analysis queries |
+| Models | Trains ElasticNet, XGBoost, Residual XGBoost, and Random Forest |
+| Analysis | Performs error analysis, walk-forward validation, ablation studies, SHAP analysis, and dashboard data auditing |
+
+### Data Integration
+
+The processing workflow includes:
+
+- Loading raw CSV datasets.
+- Cleaning and validating observations.
+- Constructing route-quarter identifiers.
+- Integrating market-level competition features.
+- Exporting processed data to Parquet.
+- Creating analytical tables and views in DuckDB.
 
 ### SQL Analysis
 
-SQL scripts are organized by purpose:
-
-| File | Purpose |
+| SQL Script | Purpose |
 |---|---|
 | `01_data_validation.sql` | Data validation |
 | `02_market_analysis.sql` | Market analysis |
@@ -106,150 +152,360 @@ SQL scripts are organized by purpose:
 | `05_build_route_features.sql` | Feature table construction |
 | `06_modeling_dataset.sql` | Modeling dataset analysis |
 
-DuckDB is used for analytical queries and feature generation. Parquet provides storage for the processed route-quarter data.
+DuckDB supports analytical queries and feature generation. Parquet provides storage for processed route-quarter data.
 
-## Forecasting Models
+### Data Validation
 
-Five approaches are evaluated:
+The project validates:
 
-- Seasonal Naive
-- ElasticNet
-- XGBoost
-- Residual XGBoost
-- Random Forest
+- Route-quarter key uniqueness.
+- Temporal alignment of lagged features.
+- Market-level feature consistency.
+- Prediction record uniqueness.
+- Airport mapping consistency.
+- Forecast data coverage.
 
-The evaluation period is 2024 Q1 through 2025 Q2.
+The latest feature validation run found no duplicate keys or invalid lag-1/lag-4 alignments.
 
-### Test Set Results
+## 6. Feature Engineering
+
+The forecasting dataset incorporates historical demand, airfare, competition, route distance, and seasonality.
+
+### Random Forest Features
+
+| Feature | Description |
+|---|---|
+| `passengers_lag1` | Previous-quarter passenger demand |
+| `passengers_lag4` | Passenger demand in the same quarter of the previous year |
+| `fare_lag1` | Previous-quarter average airfare |
+| `hhi_lag1` | Previous-quarter market concentration |
+| `carriers_lag1` | Previous-quarter number of carriers |
+| `nonstop_distance` | Direct origin-to-destination distance |
+| `Quarter` | Calendar quarter representing seasonality |
+
+### Distance Features
+
+The processed data distinguishes between:
+
+- `nonstop_distance`: Direct origin-to-destination distance.
+- `route_distance`: Distance associated with the full itinerary, including connecting segments.
+
+The forecasting models use `nonstop_distance` as a stable route characteristic.
+
+### Seasonality
+
+Seasonality is represented through:
+
+- `Quarter`, identifying the calendar quarter.
+- `passengers_lag4`, capturing demand in the same quarter of the previous year.
+
+Lagged features are constructed using historical observations to reduce temporal leakage.
+
+## 7. Forecasting Models
+
+The project implements five forecasting approaches:
+
+1. Seasonal Naive
+2. ElasticNet
+3. XGBoost
+4. Residual XGBoost
+5. Random Forest
+
+The dashboard focuses on the primary **Random Forest** model and the **Seasonal Naive** baseline.
+
+Additional candidate models remain available in the training pipeline.
+
+### Time-Based Evaluation
+
+The modeling workflow uses chronological splits.
+
+| Period | Purpose |
+|---|---|
+| Through 2022 | Training |
+| 2023 | Validation |
+| 2024 Q1–2025 Q2 | Final testing |
+
+### Seasonal Naive Baseline
+
+The Seasonal Naive model predicts demand using the corresponding quarter from the previous year:
+
+    Prediction(t) = Passenger Demand(t - 4 quarters)
+
+This provides a simple historical benchmark for evaluating machine learning models.
+
+## 8. Model Evaluation
+
+### Final Test-Set Results
+
+The following results are from the latest completed evaluation on the 2024 Q1–2025 Q2 test set.
 
 | Model | MAE | RMSE | R² |
 |---|---:|---:|---:|
-| Seasonal Naive | 16.99 | **86.41** | **0.9831** |
-| ElasticNet | 30.77 | 166.44 | 0.9373 |
-| XGBoost | 17.78 | 130.38 | 0.9615 |
-| Residual XGBoost | 16.67 | 101.64 | 0.9766 |
-| Random Forest | **16.54** | 96.34 | 0.9790 |
+| **Random Forest** | **16.4928** | 96.7351 | 0.9788 |
+| Seasonal Naive | 16.9854 | **86.4110** | **0.9831** |
 
-Random Forest achieves the lowest MAE, while the seasonal naive baseline performs best on RMSE and R².
+Random Forest achieves approximately **2.90% lower MAE** than the Seasonal Naive baseline.
 
-The results suggest that more complex models do not necessarily outperform a strong historical baseline across all evaluation metrics.
+However, Seasonal Naive achieves lower RMSE and higher R².
 
-Training sample sizes differ between models, so the comparison reflects the current implementations rather than a fully controlled benchmark.
+### Key Findings
 
-## Model Analysis
+- Random Forest produces lower average absolute prediction error.
+- Seasonal Naive performs better under metrics that are more sensitive to large prediction errors.
+- More complex models do not necessarily outperform a strong seasonal baseline across all metrics.
 
-The project includes several additional analyses.
+Other candidate models are implemented in the repository but are not included in the dashboard's focused comparison.
 
-**Error Analysis**
+Training configurations and sample sizes differ between candidate models, so the broader comparison should not be interpreted as a fully controlled benchmark.
 
-Examines prediction errors and identifies cases where models perform poorly.
+## 9. Model Analysis
 
-**Walk-Forward Validation**
+The project includes error analysis, walk-forward validation, ablation studies, SHAP explainability, and dashboard data auditing.
 
-Evaluates model performance across sequential time periods.
+### Error Analysis
 
-**Ablation Study**
+Examines prediction errors across different route-demand categories and time periods.
 
-Measures how different feature groups affect forecasting performance.
+The analysis includes MAE, RMSE, and absolute error distributions.
 
-**SHAP Analysis**
+### Walk-Forward Validation
 
-Examines feature contributions to model predictions.
+Expanding-window validation evaluates forecasting performance across successive validation years.
 
-**Dashboard Data Audit**
+The implementation includes validation periods from 2019 through 2023, covering the COVID-19 disruption and subsequent recovery.
 
-Validates the consistency of data used by the Streamlit dashboard.
+### Ablation Study
 
-## Dashboard
+An ablation experiment compares two feature groups.
 
-The Streamlit dashboard provides an interface for exploring the generated analytical results.
+**Demand History Only**
 
-Run it from the project root:
+- Previous-quarter passenger demand.
+- Same-quarter previous-year demand.
+- Calendar quarter.
 
-```bash
-streamlit run app.py/app.py
-```
+**Demand + Market Conditions**
 
-The dashboard requires locally generated data files. These are not included in the Git repository.
+- Historical demand and calendar quarter.
+- Lagged airfare.
+- Lagged market concentration.
+- Lagged number of carriers.
+- Nonstop distance.
 
-## Installation
+#### Validation Results
 
-### 1. Clone the repository
+| Feature Group | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Demand History Only | 16.8466 | 96.6030 | 0.9788 |
+| Demand + Market Conditions | **16.4299** | **91.7930** | **0.9809** |
 
-```bash
-git clone <repository-url>
-cd CMTS-airline-demand-analytics
-```
+The expanded feature group reduces:
 
-### 2. Set up Python
+- **MAE by approximately 2.47%.**
+- **RMSE by approximately 4.98%.**
+
+These improvements describe the combined contribution of additional features rather than the isolated effect of any single variable.
+
+### SHAP Explainability
+
+SHAP is used to interpret Random Forest predictions.
+
+| Rank | Feature | Mean Absolute SHAP |
+|---|---|---:|
+| 1 | `passengers_lag1` | 72.7480 |
+| 2 | `passengers_lag4` | 21.2001 |
+| 3 | `Quarter` | 2.2229 |
+| 4 | `fare_lag1` | 1.5022 |
+| 5 | `carriers_lag1` | 0.7074 |
+| 6 | `hhi_lag1` | 0.6538 |
+| 7 | `nonstop_distance` | 0.5371 |
+
+Historical passenger demand provides the strongest predictive information.
+
+Seasonality, airfare, competition, and distance contribute additional information, although their relative importance is smaller.
+
+SHAP values describe model behavior and should not be interpreted as causal effects.
+
+### Dashboard Data Audit
+
+Validates the consistency of data used by the Streamlit dashboard, including prediction uniqueness and airport mappings.
+
+## 10. Interactive Dashboard
+
+The Streamlit dashboard contains four sections.
+
+### Market Overview
+
+Provides:
+
+- Quarterly passenger demand trends.
+- Passenger-weighted average airfare.
+- Top airport-pair markets.
+- COVID-19 demand and airfare recovery analysis.
+- Interactive filters and CSV exports.
+
+### Route Explorer
+
+Allows users to select origin and destination airports and examine:
+
+- Historical passenger demand.
+- Average airfare.
+- Market concentration (HHI).
+- Number of carriers.
+- Nonstop route distance.
+
+### Demand Forecasting
+
+Displays historical out-of-sample predictions for 2024 Q1–2025 Q2.
+
+Features include:
+
+- Origin and destination selection.
+- Individual itinerary and airport-pair aggregate views.
+- Random Forest versus Seasonal Naive predictions.
+- Actual versus predicted demand.
+- Quarterly forecast errors.
+- MAE and RMSE comparisons.
+- CSV export.
+
+**Important:** These results are historical backtests, not live forecasts of future quarters.
+
+### Model Insights
+
+Provides:
+
+- Model comparison.
+- Forecast error analysis.
+- Walk-forward validation.
+- SHAP feature importance and explanations.
+- Ablation study results.
+
+### Launch the Dashboard
+
+From the project root, run:
+
+    python -m streamlit run app.py/app.py
+
+The required processed data and model outputs must be generated before launching the dashboard.
+
+## 11. Installation
+
+### Step 1: Clone the Repository
+
+    git clone <repository-url>
+    cd CMTS-airline-demand-analytics
+
+Replace `<repository-url>` with the repository's Git URL.
+
+### Step 2: Create a Python Environment
 
 Python 3.11 was used during development.
 
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-```
+Using a virtual environment:
 
-### 3. Install dependencies
+    python3.11 -m venv .venv
+    source .venv/bin/activate
 
-```bash
-python -m pip install -r requirements.txt
-```
+Alternatively, using Conda:
+
+    conda create -n cmts python=3.11
+    conda activate cmts
+
+Use one environment consistently when installing dependencies and running the pipeline.
+
+### Step 3: Install Dependencies
+
+    python -m pip install -r requirements.txt
 
 The development environment uses DuckDB 2.0.0.
 
-### 4. Prepare the data
+### Step 4: Prepare Source Data
 
-Place the following source files in `data/raw/`:
+Place the following files in `data/raw/`:
 
-```text
-data/raw/
-├── DB1B_RoutePanel_Core_2010Q1_2025Q2.csv
-└── HHI_market_quarter_2010Q1_2025Q2.csv
-```
+    data/raw/
+    ├── DB1B_RoutePanel_Core_2010Q1_2025Q2.csv
+    └── HHI_market_quarter_2010Q1_2025Q2.csv
 
-The source datasets and generated database files are excluded from Git due to their size.
+The exact source files are not included in the Git repository because of their size.
 
-A public download location for these exact input files is not currently provided in this repository.
+A public download location for these prepared inputs is not currently provided.
 
-## Running the Pipeline
+## 12. Running the Pipeline
 
-To execute the full workflow:
+### Complete Pipeline
 
-```bash
-python run_pipeline.py
-```
+Execute all stages:
 
-The pipeline runs the following stages in order:
+    python run_pipeline.py
 
-```text
-data → sql → models → analysis
-```
+The workflow runs:
 
-Individual stages can be executed separately:
+    data → sql → models → analysis
 
-```bash
-python run_pipeline.py --data
-python run_pipeline.py --sql
-python run_pipeline.py --models
-python run_pipeline.py --analysis
-```
+### Individual Stages
 
-Multiple stages can also be selected:
+    python run_pipeline.py --data
+    python run_pipeline.py --sql
+    python run_pipeline.py --models
+    python run_pipeline.py --analysis
 
-```bash
-python run_pipeline.py --data --sql
-```
+### Multiple Stages
 
-The stages have dependencies. Data processing must be completed before model training, and model training must be completed before downstream model analysis.
+    python run_pipeline.py --models --analysis
 
-## Reproducibility Notes
+### Stage Dependencies
 
-- Raw data files are not included in this repository.
-- Generated DuckDB databases, Parquet files, model artifacts, and analysis outputs are excluded from Git.
-- The reported metrics come from a completed local pipeline run.
-- The Python dependencies are not fully version-pinned.
-- The development environment uses Python 3.11 and DuckDB 2.0.0.
-- Some DuckDB views reference local Parquet files, so commands should be run from the project root.
-- Model training configurations and training sample sizes differ across approaches.
+- Data processing must run before SQL analysis and model training.
+- Model training requires the processed feature dataset.
+- Downstream model analysis requires trained models and prediction outputs.
+- The dashboard requires generated database tables, prediction files, and analytical results.
 
+Once the processed database exists, model training and analysis can be rerun without repeating raw-data processing.
+
+## 13. Reproducibility and Limitations
+
+### Reproducibility
+
+The project provides:
+
+- Modular Python scripts.
+- SQL-based analytical transformations.
+- A pipeline entry point.
+- Time-based train/validation/test splits.
+- Explicit model training configurations.
+- Saved model artifacts and evaluation outputs.
+- Automated data consistency checks.
+
+### Current Limitations
+
+- Raw source datasets are not included in the repository.
+- Processed Parquet files, DuckDB databases, trained models, and generated outputs are excluded from Git.
+- Python dependencies are not fully version-pinned.
+- Some DuckDB views reference local Parquet files.
+- Training configurations and sample sizes differ between candidate models.
+- The dataset contains sampled DB1B itinerary records rather than complete U.S. passenger traffic.
+- The dashboard presents historical backtesting results rather than future operational forecasts.
+- Forecast accuracy may vary across route sizes and unusual market conditions.
+
+## 14. Future Improvements
+
+Potential extensions include:
+
+- Automated retrieval and processing of newly released airline data.
+- Additional economic and operational forecasting features.
+- More systematic hyperparameter optimization.
+- Standardized training samples for controlled model comparisons.
+- Additional forecasting horizons.
+- Model monitoring and automated retraining.
+- Deployment of the Streamlit dashboard with a managed data backend.
+
+## 15. Conclusion
+
+This project demonstrates an end-to-end computational workflow for large-scale airline market analysis and passenger demand forecasting.
+
+It combines **Python-based data engineering, DuckDB and SQL analytics, time-aware machine learning, model explainability, automated validation, and interactive visualization** into a modular analytical platform.
+
+The results demonstrate the value of strong baseline comparisons: Random Forest improves average absolute prediction error, while the Seasonal Naive baseline remains competitive under metrics sensitive to large errors.
+
+The completed system provides a foundation for extending airline demand analysis into automated forecasting and decision-support applications.
