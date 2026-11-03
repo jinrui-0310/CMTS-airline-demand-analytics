@@ -22,6 +22,7 @@ FEATURES = [
     "fare_lag1",
     "hhi_lag1",
     "carriers_lag1",
+    "nonstop_distance",
     "Quarter",
 ]
 
@@ -55,7 +56,8 @@ def main():
             passengers_lag4,
             fare_lag1,
             hhi_lag1,
-            carriers_lag1
+            carriers_lag1,
+            nonstop_distance
         FROM route_features
         WHERE passengers_lag1 IS NOT NULL
           AND passengers_lag4 IS NOT NULL

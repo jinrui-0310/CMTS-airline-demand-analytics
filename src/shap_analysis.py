@@ -100,7 +100,7 @@ def main():
     shap.plots.beeswarm(
         shap_values,
         show=False,
-        max_display=6
+        max_display=len(features)
     )
 
     plt.tight_layout()
@@ -117,7 +117,7 @@ def main():
     shap.plots.bar(
         shap_values,
         show=False,
-        max_display=6
+        max_display=len(features)
     )
 
     plt.tight_layout()

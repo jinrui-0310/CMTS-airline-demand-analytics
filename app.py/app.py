@@ -69,6 +69,7 @@ def load_route_history(origin, destination):
         SELECT Year, Quarter, SUM(passengers) AS passengers,
                SUM(passengers * avg_fare) / NULLIF(SUM(CASE WHEN avg_fare IS NOT NULL THEN passengers ELSE 0 END), 0) AS avg_fare,
                MIN(HHI_TK) AS hhi, MIN(n_carriers_TK) AS n_carriers,
+               MIN(nonstop_distance) AS nonstop_distance,
                COUNT(DISTINCT CAST(OriginCityMarketID AS TEXT) || '-' || CAST(DestCityMarketID AS TEXT)) AS market_count
         FROM route_quarter WHERE Origin = ? AND Dest = ?
         GROUP BY Year, Quarter ORDER BY Year, Quarter
@@ -235,10 +236,11 @@ elif page == "Route Explorer":
     years = st.slider("Year range", int(df.Year.min()), int(df.Year.max()), (int(df.Year.min()), int(df.Year.max())), key="explorer_years") if df.Year.min() < df.Year.max() else (int(df.Year.min()), int(df.Year.max()))
     df = df[df.Year.between(*years)].copy()
     latest = df.iloc[-1]
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Latest quarterly passenger volume", f"{latest.passengers:,.0f}")
     c2.metric("Latest average fare", f"${latest.avg_fare:,.2f}" if pd.notna(latest.avg_fare) else "N/A")
     c3.metric("Latest city-market HHI", f"{latest.hhi:.3f}" if pd.notna(latest.hhi) else "N/A")
+    c4.metric("Nonstop distance", f"{latest.nonstop_distance:,.0f} mi" if pd.notna(latest.nonstop_distance) else "N/A")
     st.caption("HHI and carrier count are city-market measures; they are not independently calculated for an individual airport pair.")
     st.subheader("Passenger Demand")
     fig = px.line(df, x="Date", y="passengers", markers=True, color_discrete_sequence=[BLUE])
@@ -409,13 +411,17 @@ elif page == "Model Insights":
     with tab1:
         st.header("Forecasting Model Comparison")
         st.caption("All metrics are from the 2024 Q1–2025 Q2 test set; lower MAE/RMSE and higher R² are better.")
-        model_results = pd.DataFrame([
-            {"Model": "Seasonal Naive", "MAE": 16.99, "RMSE": 86.41, "R2": 0.9831},
-            {"Model": "ElasticNet", "MAE": 30.77, "RMSE": 166.44, "R2": 0.9373},
-            {"Model": "XGBoost", "MAE": 17.78, "RMSE": 130.38, "R2": 0.9615},
-            {"Model": "Residual XGBoost", "MAE": 16.68, "RMSE": 101.62, "R2": 0.9766},
-            {"Model": "Random Forest", "MAE": 16.5356, "RMSE": 96.3429, "R2": 0.9790},
-        ])
+        metrics = load_results_csv("random_forest_metrics.csv")
+        if metrics is None:
+            st.error("Model metrics file not found.")
+            st.stop()
+        model_results = metrics.loc[
+            metrics["Split"].astype(str).str.startswith("Test"),
+            ["Model", "MAE", "RMSE", "R2"]
+        ].copy()
+        if model_results.empty:
+            st.error("No test-set metrics available.")
+            st.stop()
         st.dataframe(model_results.style.format({"MAE": "{:.2f}", "RMSE": "{:.2f}", "R2": "{:.4f}"}), use_container_width=True, hide_index=True)
         c1, c2 = st.columns(2)
         with c1:
@@ -426,7 +432,9 @@ elif page == "Model Insights":
             fig = px.bar(model_results.sort_values("RMSE"), x="Model", y="RMSE", text="RMSE", color_discrete_sequence=[ORANGE])
             fig.update_xaxes(tickangle=-30)
             st.plotly_chart(polish(fig, 420, x_title=None, y_title="RMSE"), use_container_width=True)
-        st.info("Random Forest has the lowest overall MAE, while Seasonal Naive has the lowest RMSE. The models trade off typical accuracy and large-error sensitivity.")
+        best_mae = model_results.loc[model_results["MAE"].idxmin(), "Model"]
+        best_rmse = model_results.loc[model_results["RMSE"].idxmin(), "Model"]
+        st.info(f"Lowest MAE: {best_mae}. Lowest RMSE: {best_rmse}.")
     with tab2:
         st.header("Forecast Error Analysis")
         overall = load_results_csv("overall_error_metrics.csv")
@@ -448,7 +456,7 @@ elif page == "Model Insights":
             display_saved_figure("mae_by_route_size.png", "MAE across route-size categories")
         with c2:
             display_saved_figure("rmse_by_route_size.png", "RMSE across route-size categories")
-        st.markdown("**Key finding:** Random Forest improves MAE on small/medium routes, while Seasonal Naive is more robust on large routes.")
+        st.caption("Compare route-size error metrics above to evaluate performance across demand segments.")
         st.divider()
         st.subheader("Forecast Error by Year")
         if yearly is not None:
@@ -480,7 +488,7 @@ elif page == "Model Insights":
                     fig = px.line(plot_df, x=year_col, y=metric, color="Model", markers=True,
                                   color_discrete_map={"Random Forest": BLUE, "Seasonal Naive": ORANGE})
                     st.plotly_chart(polish(fig, 430, x_title="Validation year", y_title=metric), use_container_width=True)
-            st.info("Random Forest improves MAE in each reported validation year; both models face substantial difficulty during the 2020 shock.")
+            st.caption("Compare validation-year errors to assess performance across different market conditions.")
     with tab4:
         st.header("Model Explainability")
         st.write("SHAP attributes Random Forest predictions to input features; these explanations are not causal estimates.")
@@ -509,4 +517,16 @@ elif page == "Model Insights":
                     fig = px.bar(ablation, x="Model", y="RMSE", text="RMSE", color_discrete_sequence=[ORANGE])
                     fig.update_xaxes(tickangle=-15)
                     st.plotly_chart(polish(fig, 400, x_title=None, y_title="RMSE"), use_container_width=True)
-            st.success("Adding lagged fare and competition features reduced validation MAE by approximately 2.16% and RMSE by 4.89% in the ablation experiment.")
+            if {"Model", "MAE", "RMSE"}.issubset(ablation.columns) and len(ablation) >= 2:
+                baseline = ablation.loc[ablation["Model"] == "Demand History Only"]
+                extended = ablation.loc[ablation["Model"] == "Demand + Market Conditions"]
+                if not baseline.empty and not extended.empty:
+                    b = baseline.iloc[0]
+                    e = extended.iloc[0]
+                    mae_gain = (b["MAE"] - e["MAE"]) / b["MAE"] * 100
+                    rmse_gain = (b["RMSE"] - e["RMSE"]) / b["RMSE"] * 100
+                    st.info(
+                        f"Extended features (lagged fare, competition, and distance) "
+                        f"change validation MAE by {-mae_gain:+.2f}% and "
+                        f"RMSE by {-rmse_gain:+.2f}% relative to demand history only."
+                    )

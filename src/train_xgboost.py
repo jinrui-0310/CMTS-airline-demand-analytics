@@ -22,6 +22,7 @@ FEATURES = [
     "fare_lag1",
     "hhi_lag1",
     "carriers_lag1",
+    "nonstop_distance",
     "Quarter",
 ]
 
